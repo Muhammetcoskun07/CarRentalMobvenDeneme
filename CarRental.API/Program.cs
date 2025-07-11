@@ -8,27 +8,24 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 
-// Swagger/OpenAPI ayarlarý
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// InMemory Database yapýlandýrmasý
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseInMemoryDatabase("CarRentalDb"));
 
-// Repository ve Service kayýtlarý (Scoped)
 builder.Services.AddScoped<ICarRepository, CarRepository>();
 builder.Services.AddScoped<ICarService, CarService>();
 
-// AutoMapper yapýlandýrmasý
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
 
-// Geliþtirme ortamýnda Swagger kullanýmý
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -41,7 +38,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed Data eklemesi (veritabaný baþlangýç verisi)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -49,6 +45,10 @@ using (var scope = app.Services.CreateScope())
     context.Cars.AddRange(
         new CarRental.Domain.Entities.Car { Brand = "BMW", Model = "320i", IsAvailable = true },
         new CarRental.Domain.Entities.Car { Brand = "Audi", Model = "A4", IsAvailable = false }
+    );
+
+    context.Users.Add(
+        new CarRental.Domain.Entities.User { Email = "admin@admin.com", Password = "123456" }
     );
 
     context.SaveChanges();
